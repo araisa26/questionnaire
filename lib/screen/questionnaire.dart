@@ -21,17 +21,18 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
   late int questionIndex;
   Question get currentQuestion => questions[questionIndex];
   int get numberOfQuestions => questions.length;
-  late List<int> chosenAnswers;
+  late List<int?> chosenAnswers;
   bool get userHasAnsweredCurrentQuestion =>
       chosenAnswers[questionIndex] != null;
   String get instructions => widget.questionnaire.instructions;
+  bool questionActive = true;
 
   String getResultInterpretation() {
     // calculate user's total score
     int result = 0;
     for (int index = 0; index < numberOfQuestions; index++) {
       Question question = questions[index];
-      int answerIndex = chosenAnswers[index];
+      int answerIndex = chosenAnswers[index]!;
       Answer answer = question.answers[answerIndex];
       int score = answer.score;
 
@@ -50,11 +51,15 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     return interpretations.last.text;
   }
 
+  void questionNotActive() {
+    questionActive = userHasAnsweredCurrentQuestion ? true : false;
+  }
+
   @override
   void initState() {
     super.initState();
     questionIndex = 0;
-    chosenAnswers = List.generate(questions.length, (index) => 0);
+    chosenAnswers = List.generate(questions.length, (index) => null);
   }
 
   @override
@@ -115,7 +120,23 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                         ),
                       ),
                       const SizedBox(
-                        height: 24,
+                        height: 12,
+                      ),
+                      questionActive == false
+                          ? const Padding(
+                              padding: EdgeInsets.only(left: 30.0, right: 8.0),
+                              child: Text(
+                                'Выберите один из вариантов',
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.red),
+                                textAlign: TextAlign.left,
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                      const SizedBox(
+                        height: 12,
                       ),
                       Column(
                         children: currentQuestion.answers
@@ -140,20 +161,6 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                           );
                         }).toList(),
                       ),
-
-                      // RadioButtonGroup(
-                      //   activeColor: Theme.of(context).primaryColor,
-                      //   labels: currentQuestion.answers
-                      //       .map((answer) => answer.text)
-                      //       .toList(),
-                      //   onChange: (_, answerIndex) => setState(() {
-                      //     chosenAnswers[questionIndex] = answerIndex;
-                      //   }),
-                      //   picked: !userHasAnsweredCurrentQuestion
-                      //       ? ""
-                      //       : currentQuestion
-                      //           .answers[chosenAnswers[questionIndex]].text,
-                      // ),
                       const SizedBox(
                         height: 20,
                       ),
@@ -173,7 +180,9 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                               buttonLabel: 'Далее',
                               onPressed: () => userHasAnsweredCurrentQuestion
                                   ? onNextButtonPressed()
-                                  : null,
+                                  : setState(() {
+                                      questionNotActive();
+                                    }),
                             )
                           ],
                         ),
@@ -193,6 +202,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     if (questionIndex < numberOfQuestions - 1) {
       setState(() {
         questionIndex++;
+        questionActive = true;
       });
     } else {
       Navigator.pushReplacement(
@@ -211,6 +221,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     if (questionIndex > 0) {
       setState(() {
         questionIndex--;
+        questionActive = true;
       });
     }
   }
